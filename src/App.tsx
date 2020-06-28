@@ -24,7 +24,7 @@ const App = () => {
   return (
     <Router>
       <Switch>
-        <Route exact path="/" component={GameLobby}></Route>
+        <PrivateRoute exact path="/" isLoggedIn={isLoggedIn} component={GameLobby}></PrivateRoute>
         <Route exact path="/login" component={Login}></Route>
         <Route exact path="/register" component={Register}></Route>
         <PrivateRoute path="/lobby" isLoggedIn={isLoggedIn} component={GameLobby}></PrivateRoute>
