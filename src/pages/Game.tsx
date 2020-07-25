@@ -1,26 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { Location } from 'history';
 import { RouteComponentProps, StaticContext } from 'react-router';
-import { getRoomRef, setGameRoles, setRoundStarted, setRoundEnded } from '../services/game.service';
+import { Button, Grid, makeStyles } from '@material-ui/core';
+import { Location } from 'history';
+import { getRoomRef, setGameRoles, setRoundStarted, setRoundEnded, setNextWord } from '../services/game.service';
 import { Room } from '../interfaces/room.interface';
 import Header from '../components/header/Header';
 import RoleDescription from '../components/roleDescription/RoleDescription';
 import { GameRole } from '../interfaces/game-role.interface';
 import { RoundStatus } from '../interfaces/round-status.interface';
 import { getCurrentUser } from '../config';
+import CurrentWord from '../components/currentWord/CurrentWord';
+import firebase from 'firebase';
 
 type LocationState = {
   from: Location;
   roomId: string;
 };
 
+const useStyles = makeStyles(() => ({
+  container: {
+    padding: '20px',
+  },
+  gameActions: {
+    marginTop: '20px',
+
+    '& > button': {
+      marginRight: '8px',
+    },
+  },
+}));
+
 const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
+  const classes = useStyles();
+
   const { roomId } = props.location.state;
-  const currentUser = getCurrentUser();
+  const [currentUser, setCurrentUser] = useState<firebase.User | null>(getCurrentUser());
+  const [isOwner, setIsOwner] = useState<boolean>(false);
   const [userCount, setUserCount] = useState<number>(1);
   const [roundStatus, setRoundStatus] = useState<RoundStatus>(RoundStatus.Idle);
-  const [currentRole, setCurrentRole] = useState<GameRole>(GameRole.Sleeper);
+  const [currentRole, setCurrentRole] = useState<GameRole | undefined>(undefined);
   const [currentWord, setCurrentWord] = useState<string>('');
+
+  firebase.auth().onAuthStateChanged(authUser => {
+    setCurrentUser(authUser);
+  });
 
   useEffect(() => {
     getRoomRef(roomId).on('value', (snapshot) => {
@@ -29,7 +52,11 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
       setUserCount(room.users.length);
       setRoundStatus(room.roundStatus);
 
-      if (room.roundStatus === RoundStatus.SettingRoles && room.users) {
+      if (room.ownerUid === currentUser?.uid) {
+        setIsOwner(true);
+      }
+
+      if (!currentRole && room.users) {
         const user = room.users.find(u => u.uid === currentUser?.uid);
         setCurrentRole(user?.roundRole as GameRole);
       }
@@ -62,8 +89,8 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
     setRoundStatus(RoundStatus.Started);
   }
 
-  const setScore = async (scored: boolean) => {
-    // TODO: SET SCORE IN FIREBASE AND GET ANOTHER WORD
+  const getNextWord = async () => {
+    await setNextWord(roomId);
   }
 
   const endRound = async () => {
@@ -71,42 +98,51 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
     setRoundStatus(RoundStatus.DreamReview);
   }
 
+  const startNewRound = async () => {
+    await setGameRoles(roomId);
+    setRoundStatus(RoundStatus.SettingRoles);
+  }
+
   return (
     <>
       <Header roomId={roomId} />
-      <div>
-        <h1>Let's Play! Room ID: { roomId }</h1>
-        {roundStatus === RoundStatus.Idle && (
-          <button onClick={startGame} >
-            Iniciar Jogo
-          </button>
-        )}
-        {roundStatus === RoundStatus.SettingRoles && (
-          <button onClick={startRound} >
-            Iniciar Rodada
-          </button>
-        )}
-        {roundStatus === RoundStatus.Started && (
-          <button onClick={endRound} >
-            Finalizar Rodada
-          </button>
-        )}
-        <button onClick={resetGame} >
-          Resetar Jogo
-        </button>
-      </div>
-      { roundStatus !== RoundStatus.Idle && (<RoleDescription currentRole={currentRole} />) }
-      { roundStatus === RoundStatus.Started && (<p>Palavra: {currentWord}</p>)}
-      {roundStatus === RoundStatus.Started && (
-        <button onClick={() => setScore(true)} >
-          Acertou!
-        </button>
-      )}
-      {roundStatus === RoundStatus.Started && (
-        <button onClick={() => setScore(false)} >
-          Errou!
-        </button>
-      )}
+      <Grid container spacing={0}>
+        <Grid className={classes.container} item sm={12} md={8}>
+          { roundStatus === RoundStatus.Started && currentRole !== GameRole.Sleeper && (<CurrentWord word={currentWord} setCorrectWord={getNextWord} setIncorrectWord={getNextWord} />)}
+          <div>
+            {roundStatus === RoundStatus.Idle && isOwner && (
+              <Button variant="contained" color="primary" onClick={startGame} >
+                Iniciar Jogo
+              </Button>
+            )}
+            {roundStatus === RoundStatus.SettingRoles && currentRole === GameRole.Sleeper && (
+              <Button variant="contained" onClick={startRound} >
+                Iniciar Rodada
+              </Button>
+            )}
+            {roundStatus === RoundStatus.DreamReview && (
+              <Button variant="contained" color="primary" onClick={startNewRound} >
+                Iniciar Nova Rodada
+              </Button>
+            )}
+          </div>
+          <div className={classes.gameActions}>
+            {roundStatus === RoundStatus.Started && currentRole !== GameRole.Sleeper && (
+              <Button variant="contained" onClick={endRound} >
+                Finalizar Rodada
+              </Button>
+            )}
+            {isOwner && (
+              <Button variant="contained" onClick={resetGame} >
+                Resetar Jogo
+              </Button>
+            )}
+          </div>
+        </Grid>
+        <Grid className={classes.container} item sm={12} md={4}>
+          { roundStatus !== RoundStatus.Idle && (<RoleDescription currentRole={currentRole} />) }
+        </Grid>
+      </Grid>
     </>
   );
 }

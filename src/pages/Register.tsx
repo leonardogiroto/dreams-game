@@ -20,7 +20,7 @@ const Register = () => {
 
   const doRegister = async () => {
     try {
-      const result = await register(registerInfo.email, registerInfo.password);
+      await register(registerInfo.email, registerInfo.password);
       alert('registrado com sucesso!');
     } catch (error) {
       alert('Ocorreu um erro, por favor tente novamente mais tarde');

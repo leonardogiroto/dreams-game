@@ -78,9 +78,21 @@ export const setRoundStarted = async (roomId: string) => {
   });
 }
 
+export const setNextWord = async (roomId: string) => {
+  const roomRef = getRoomRef(roomId);
+  await roomRef.child('/currentWord').set(getRandomWord());
+  // TODO: SET LASTRANDOMWORDS AND PREVENT REPEATED WORDS
+};
+
 export const setRoundEnded = async (roomId: string) => {
   const roomRef = getRoomRef(roomId);
-  await roomRef.child('/roundStatus').set(RoundStatus.DreamReview);
+  await roomRef.once('value', async (snapshot) => {
+    const room = snapshot.val() as Room;
+    await roomRef.child('/roundStatus').set(RoundStatus.DreamReview);
+    await roomRef.child('/lastSleeperIndex').set(
+      _getNextSleeperIndex(room.lastSleeperIndex, room.users.length)
+    );
+  });
 }
 
 export const getRoomRef = (roomId: string): firebase.database.Reference => {

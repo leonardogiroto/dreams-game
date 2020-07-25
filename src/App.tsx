@@ -13,22 +13,20 @@ import GameLobby from './pages/GameLobby';
 import Game from './pages/Game';
 
 const App = () => {
-  const [ isLoggedIn, setAuthState ] = useState(false);
+  const [ isLoggedIn, setAuthState ] = useState(true);
 
   firebase.auth().onAuthStateChanged(authUser => {
-    authUser
-      ? setAuthState(true)
-      : setAuthState(false);
+    setAuthState(authUser !== null);
   });
 
   return (
     <Router>
       <Switch>
         <PrivateRoute exact path="/" isLoggedIn={isLoggedIn} component={GameLobby}></PrivateRoute>
-        <Route exact path="/login" component={Login}></Route>
-        <Route exact path="/register" component={Register}></Route>
         <PrivateRoute path="/lobby" isLoggedIn={isLoggedIn} component={GameLobby}></PrivateRoute>
         <PrivateRoute path="/game" isLoggedIn={isLoggedIn} component={Game}></PrivateRoute>
+        <Route exact path="/login" component={Login}></Route>
+        <Route exact path="/register" component={Register}></Route>
       </Switch>
     </Router>
   );
