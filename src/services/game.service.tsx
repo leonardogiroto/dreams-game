@@ -4,8 +4,6 @@ import { GameRole } from '../interfaces/game-role.interface';
 import { RoundStatus } from '../interfaces/round-status.interface';
 import { RandomWords } from '../static/random-words';
 
-const RANDOM_WORDS_COUNT = RandomWords.length;
-
 export const createRoom = async (roomName: string): Promise<string | null> => {
   const ref = db.ref('rooms').push();
   const id = ref.key;
@@ -14,6 +12,7 @@ export const createRoom = async (roomName: string): Promise<string | null> => {
     roomName, currentRound: 0, lastSleeperIndex: 0,
     roundStatus: RoundStatus.Idle,
     ownerUid: currentUser?.uid,
+    usedWords: [],
     users: [{ uid: currentUser?.uid, points: 0 }]
   });
   return id;
@@ -62,26 +61,41 @@ export const setGameRoles = async (roomId: string) => {
   });
 }
 
-const getRandomWord = (): string => {
-  const randomIndex = Math.floor(Math.random() * RANDOM_WORDS_COUNT);
-  return RandomWords[randomIndex].word;
+const getRandomWord = (usedWords: Array<string> = []): string => {
+  const FilteredRandomWords = RandomWords.filter(word => !usedWords.includes(word.word));
+  const WORDS_COUNT = FilteredRandomWords.length;
+  const randomIndex = Math.floor(Math.random() * WORDS_COUNT);
+  return FilteredRandomWords[randomIndex].word;
 }
 
 export const setRoundStarted = async (roomId: string) => {
   const roomRef = getRoomRef(roomId);
   await roomRef.once('value', async (snapshot) => {
     const room = snapshot.val() as Room;
+    const newWord = getRandomWord();
+    const usedWords: Array<string> = room.usedWords || [];
     await roomRef.child('/currentRound').set(room.currentRound + 1);
     await roomRef.child('/roundStatus').set(RoundStatus.Started);
-    await roomRef.child('/currentWord').set(getRandomWord());
+    await roomRef.child('/currentWord').set(newWord);
+    await roomRef.child('/usedWords').set([
+      ...usedWords, newWord
+    ]);
     // TODO: SET LASTRANDOMWORDS AND PREVENT REPEATED WORDS
   });
 }
 
 export const setNextWord = async (roomId: string) => {
   const roomRef = getRoomRef(roomId);
-  await roomRef.child('/currentWord').set(getRandomWord());
-  // TODO: SET LASTRANDOMWORDS AND PREVENT REPEATED WORDS
+  await roomRef.once('value', async (snapshot) => {
+    const room = snapshot.val() as Room;
+    const usedWords: Array<string> = room.usedWords || [];
+    const newWord = getRandomWord(room.usedWords);
+    await roomRef.child('/currentWord').set(newWord);
+    await roomRef.child('/usedWords').set([
+      ...usedWords, newWord
+    ]);
+    // TODO: SET LASTRANDOMWORDS AND PREVENT REPEATED WORDS
+  });
 };
 
 export const setRoundEnded = async (roomId: string) => {

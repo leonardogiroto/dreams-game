@@ -8,6 +8,7 @@ export interface Room {
   lastSleeperIndex: number;
   ownerUid: string;
   roomName: string;
+  usedWords: Array<string>;
   users: Array<RoomUser>;
 }
 

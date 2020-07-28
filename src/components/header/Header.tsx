@@ -16,6 +16,10 @@ const useStyles = makeStyles((theme) => ({
     background: theme.palette.primary.main,
     color: 'white',
     padding: '0 16px',
+
+    '& p:last-child': {
+      textAlign: 'right',
+    },
   },
 }));
 
@@ -25,14 +29,17 @@ const Header = (props: HeaderProps) => {
 
   const [currentRound, setCurrentRound] = useState<number>(0);
   const [roundStatus, setRoundStatus] = useState<RoundStatus>(RoundStatus.Idle);
+  const [playersCount, setPlayersCount] = useState<number>(1);
   // const [scores, setCurrentRound] = useState<Array<>(0);
 
   useEffect(() => {
     getRoomRef(roomId).on('value', (snapshot) => {
       const room = snapshot.val() as Room;
+      console.log(room);
 
       setCurrentRound(room.currentRound);
       setRoundStatus(room.roundStatus);
+      setPlayersCount(room.users ? room.users.length : 0);
 
       // if (room.roundStatus === RoundStatus.SettingRoles && room.users) {
       //   const user = room.users.find(u => u.uid === currentUser?.uid);
@@ -63,8 +70,11 @@ const Header = (props: HeaderProps) => {
         <br />
         <strong>Status:</strong> {getStatusDescription(roundStatus)}
       </p>
-      {/* <p>Scores: {score}</p> */}
-      <p><strong>Room ID:</strong> {roomId}</p>
+      <p>
+        <strong>Room ID:</strong> {roomId}
+        <br />
+        {playersCount} pessoas na sala
+      </p>
     </header>
   )
 }
