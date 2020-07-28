@@ -107,9 +107,6 @@ function _getNextSleeperIndex(lastSleeperIndex: number, usersCount: number): num
 
 function _getRolesByNumberOfPlayers(numberOfPlayers: number): Array<GameRole> {
   switch (numberOfPlayers) {
-    /* TESTE */
-    case 2:
-      return [ GameRole.Fairy ];
     case 4:
       return [
         GameRole.Fairy,

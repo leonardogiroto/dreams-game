@@ -68,9 +68,8 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
   }, [roomId, currentUser, roundStatus, currentRole]);
 
   const startGame = async () => {
-    // TODO -> 4
     // TODO -> LOADER
-    if (userCount < 2) {
+    if (userCount < 4) {
       alert('Erro: o jogo só pode iniciar com pelo menos 4 jogadores na sala');
       return;
     }
