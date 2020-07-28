@@ -11,6 +11,7 @@ import { RoundStatus } from '../interfaces/round-status.interface';
 import { getCurrentUser } from '../config';
 import CurrentWord from '../components/currentWord/CurrentWord';
 import firebase from 'firebase';
+import Timer from '../components/timer/Timer';
 
 type LocationState = {
   from: Location;
@@ -40,6 +41,7 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
   const [roundStatus, setRoundStatus] = useState<RoundStatus>(RoundStatus.Idle);
   const [currentRole, setCurrentRole] = useState<GameRole | undefined>(undefined);
   const [currentWord, setCurrentWord] = useState<string>('');
+  const [triggerTimer, setTriggerTimer] = useState<boolean>(false);
 
   firebase.auth().onAuthStateChanged(authUser => {
     setCurrentUser(authUser);
@@ -86,6 +88,7 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
   const startRound = async () => {
     await setRoundStarted(roomId);
     setRoundStatus(RoundStatus.Started);
+    setTriggerTimer(!triggerTimer);
   }
 
   const getNextWord = async () => {
@@ -107,7 +110,12 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
       <Header roomId={roomId} />
       <Grid container spacing={0}>
         <Grid className={classes.container} item sm={12} md={8}>
-          { roundStatus === RoundStatus.Started && currentRole !== GameRole.Sleeper && (<CurrentWord word={currentWord} setCorrectWord={getNextWord} setIncorrectWord={getNextWord} />)}
+          { roundStatus === RoundStatus.Started && currentRole !== GameRole.Sleeper && (
+            <>
+              <CurrentWord word={currentWord} setCorrectWord={getNextWord} setIncorrectWord={getNextWord} />
+              <Timer triggerTimer={triggerTimer} />
+            </>
+          )}
           <div>
             {roundStatus === RoundStatus.Idle && isOwner && (
               <Button variant="contained" color="primary" onClick={startGame} >
