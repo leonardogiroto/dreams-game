@@ -126,7 +126,7 @@ export const setDreamerScore = async (roomId: string, rememberedDream: boolean) 
     if (room.currentScore) {
       const user = room.users.find(user => user.roundRole === GameRole.Sleeper);
       if (user) {
-        user.points = room.currentScore.correct + (rememberedDream ? 2 : 0);
+        user.points = user.points + room.currentScore.correct + (rememberedDream ? 2 : 0);
         await roomRef.child('/users').set(room.users);
         await roomRef.child('/currentScore').set({
           correct: 0,
