@@ -35,7 +35,6 @@ const Header = (props: HeaderProps) => {
   useEffect(() => {
     getRoomRef(roomId).on('value', (snapshot) => {
       const room = snapshot.val() as Room;
-      console.log(room);
 
       setCurrentRound(room.currentRound);
       setRoundStatus(room.roundStatus);

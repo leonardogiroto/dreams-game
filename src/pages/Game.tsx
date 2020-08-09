@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RouteComponentProps, StaticContext } from 'react-router';
 import { Button, Grid, makeStyles } from '@material-ui/core';
 import { Location } from 'history';
-import { getRoomRef, setGameRoles, setRoundStarted, setRoundEnded, setNextWord } from '../services/game.service';
+import { getRoomRef, setGameRoles, setRoundStarted, setRoundEnded, setNextWord, setDreamerScore } from '../services/game.service';
 import { Room } from '../interfaces/room.interface';
 import Header from '../components/header/Header';
 import RoleDescription from '../components/roleDescription/RoleDescription';
@@ -91,8 +91,8 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
     setTriggerTimer(!triggerTimer);
   }
 
-  const getNextWord = async () => {
-    await setNextWord(roomId);
+  const getNextWord = async (guessedCorrectly: boolean): Promise<void> => {
+    await setNextWord(roomId, guessedCorrectly);
   }
 
   const endRound = async () => {
@@ -100,7 +100,8 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
     setRoundStatus(RoundStatus.DreamReview);
   }
 
-  const startNewRound = async () => {
+  const startNewRound = async (rememberedDream: boolean) => {
+    await setDreamerScore(roomId, rememberedDream);
     await setGameRoles(roomId);
     setRoundStatus(RoundStatus.SettingRoles);
   }
@@ -112,7 +113,7 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
         <Grid className={classes.container} item sm={12} md={8}>
           { roundStatus === RoundStatus.Started && currentRole !== GameRole.Sleeper && (
             <>
-              <CurrentWord word={currentWord} setCorrectWord={getNextWord} setIncorrectWord={getNextWord} />
+              <CurrentWord word={currentWord} setGuessedWord={getNextWord} />
               <Timer triggerTimer={triggerTimer} />
             </>
           )}
@@ -127,10 +128,15 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
                 Iniciar Rodada
               </Button>
             )}
-            {roundStatus === RoundStatus.DreamReview && (
-              <Button variant="contained" color="primary" onClick={startNewRound} >
-                Iniciar Nova Rodada
-              </Button>
+            {roundStatus === RoundStatus.DreamReview && currentRole !== GameRole.Sleeper && (
+              <>
+                <Button variant="contained" color="primary" onClick={() => startNewRound(true)} >
+                  Relembrou Sonho
+                </Button>
+                <Button variant="contained" color="secondary" onClick={() => startNewRound(false)} >
+                  Não Relembrou
+                </Button>
+              </>
             )}
           </div>
           <div className={classes.gameActions}>

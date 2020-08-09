@@ -80,21 +80,23 @@ export const setRoundStarted = async (roomId: string) => {
     await roomRef.child('/usedWords').set([
       ...usedWords, newWord
     ]);
-    // TODO: SET LASTRANDOMWORDS AND PREVENT REPEATED WORDS
   });
 }
 
-export const setNextWord = async (roomId: string) => {
+export const setNextWord = async (roomId: string, guessedCorrectly: boolean) => {
   const roomRef = getRoomRef(roomId);
   await roomRef.once('value', async (snapshot) => {
     const room = snapshot.val() as Room;
     const usedWords: Array<string> = room.usedWords || [];
     const newWord = getRandomWord(room.usedWords);
+    await roomRef.child('/currentScore').set({
+      'correct': (room.currentScore?.correct || 0) + (guessedCorrectly ? 1 : 0),
+      'wrong': (room.currentScore?.incorrect || 0) + (guessedCorrectly ? 0 : 1),
+    });
     await roomRef.child('/currentWord').set(newWord);
     await roomRef.child('/usedWords').set([
       ...usedWords, newWord
     ]);
-    // TODO: SET LASTRANDOMWORDS AND PREVENT REPEATED WORDS
   });
 };
 
@@ -106,6 +108,31 @@ export const setRoundEnded = async (roomId: string) => {
     await roomRef.child('/lastSleeperIndex').set(
       _getNextSleeperIndex(room.lastSleeperIndex, room.users.length)
     );
+
+    if (room.currentScore) {
+      room.users.forEach((user) => {
+        user.points = _getUserPoints(user, room);
+      });
+      await roomRef.child('/users').set(room.users);
+    }
+  });
+}
+
+export const setDreamerScore = async (roomId: string, rememberedDream: boolean) => {
+  const roomRef = getRoomRef(roomId);
+  await roomRef.once('value', async (snapshot) => {
+    const room = snapshot.val() as Room;
+    if (room.currentScore) {
+      const user = room.users.find(user => user.roundRole === GameRole.Sleeper);
+      if (user) {
+        user.points = room.currentScore.correct + (rememberedDream ? 2 : 0);
+        await roomRef.child('/users').set(room.users);
+        await roomRef.child('/currentScore').set({
+          correct: 0,
+          incorrect: 0,
+        });
+      }
+    }
   });
 }
 
@@ -159,4 +186,32 @@ function _getRolesByNumberOfPlayers(numberOfPlayers: number): Array<GameRole> {
   }
 
   return [];
+}
+
+function _getUserPoints(user: RoomUser, room: Room): number {
+  switch (user.roundRole) {
+    case GameRole.Fairy:
+      return user.points + room.currentScore.correct;
+    case GameRole.Bogeyman:
+      return user.points + room.currentScore.incorrect;
+    case GameRole.Sandman:
+      const diff = Math.abs(room.currentScore.correct - room.currentScore.incorrect);
+      if (diff === 0) {
+        return user.points + room.currentScore.correct + 2;
+      } else {
+        if (diff === 1) {
+          const biggestPoint = room.currentScore.correct > room.currentScore.incorrect
+            ? room.currentScore.correct
+            : room.currentScore.incorrect;
+          return user.points + biggestPoint;
+        } else {
+          const lowestPoint = room.currentScore.correct > room.currentScore.incorrect
+            ? room.currentScore.incorrect
+            : room.currentScore.correct;
+          return user.points + lowestPoint;
+        }
+      }
+    default:
+      return 0;
+  }
 }

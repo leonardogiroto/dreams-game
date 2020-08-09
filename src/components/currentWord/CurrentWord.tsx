@@ -3,8 +3,7 @@ import { makeStyles, Card, CardContent, Typography, CardActions, Button } from '
 
 interface CurrentWordProps {
   word: string;
-  setCorrectWord: any;
-  setIncorrectWord: any;
+  setGuessedWord: Function;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -17,7 +16,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const CurrentWord = (props: CurrentWordProps) => {
-  const { word, setCorrectWord, setIncorrectWord } = props;
+  const { word, setGuessedWord } = props;
   const classes = useStyles();
 
   return (
@@ -31,8 +30,8 @@ const CurrentWord = (props: CurrentWordProps) => {
         </Typography>
       </CardContent>
       <CardActions className={classes.actionsContainer}>
-        <Button variant="contained" color="primary" onClick={() => setCorrectWord()}>Acertou</Button>
-        <Button variant="contained" color="secondary" onClick={() => setIncorrectWord()}>Errou</Button>
+        <Button variant="contained" color="primary" onClick={() => setGuessedWord(true)}>Acertou</Button>
+        <Button variant="contained" color="secondary" onClick={() => setGuessedWord(false)}>Errou</Button>
       </CardActions>
     </Card>
   );
