@@ -213,6 +213,6 @@ function _getUserPoints(user: RoomUser, room: Room): number {
         }
       }
     default:
-      return 0;
+      return user.points;
   }
 }
