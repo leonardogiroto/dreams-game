@@ -30,20 +30,13 @@ const Header = (props: HeaderProps) => {
   const [currentRound, setCurrentRound] = useState<number>(0);
   const [roundStatus, setRoundStatus] = useState<RoundStatus>(RoundStatus.Idle);
   const [playersCount, setPlayersCount] = useState<number>(1);
-  // const [scores, setCurrentRound] = useState<Array<>(0);
 
   useEffect(() => {
     getRoomRef(roomId).on('value', (snapshot) => {
       const room = snapshot.val() as Room;
-
       setCurrentRound(room.currentRound);
       setRoundStatus(room.roundStatus);
       setPlayersCount(room.users ? room.users.length : 0);
-
-      // if (room.roundStatus === RoundStatus.SettingRoles && room.users) {
-      //   const user = room.users.find(u => u.uid === currentUser?.uid);
-      //   setCurrentRole(user?.roundRole as GameRole);
-      // }
     }); 
   }, [roomId, currentRound, roundStatus]);
 

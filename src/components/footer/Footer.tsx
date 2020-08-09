@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { makeStyles } from '@material-ui/core';
+import { makeStyles, Dialog, DialogTitle, DialogContent } from '@material-ui/core';
 import { getRoomRef } from '../../services/game.service';
 import { Room, RoomUser } from '../../interfaces/room.interface';
 
@@ -14,6 +14,13 @@ const useStyles = makeStyles((theme) => ({
     padding: '4px 16px',
     width: 'calc(100% - 32px)',
   },
+  pointsRules: {
+    cursor: 'pointer',
+
+    '&:hover': {
+      textDecoration: 'underline',
+    },
+  },
   users: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -26,6 +33,11 @@ const useStyles = makeStyles((theme) => ({
       },
     },
   },
+  dialogContent: {
+    '& p:first-child': {
+      marginTop: 0,
+    },
+  }
 }));
 
 const Footer = (props: HeaderProps) => {
@@ -33,6 +45,7 @@ const Footer = (props: HeaderProps) => {
   const classes = useStyles();
 
   const [users, setUsers] = useState<Array<RoomUser>>([]);
+  const [open, setOpen] = useState<boolean>(false);
 
   useEffect(() => {
     getRoomRef(roomId).on('value', (snapshot) => {
@@ -43,8 +56,8 @@ const Footer = (props: HeaderProps) => {
 
   return (
     <footer className={classes.footer}>
-      <p>
-        <strong>PONTUAÇÃO</strong>
+      <p className={classes.pointsRules} onClick={() => setOpen(true)}>
+        <strong>PONTUAÇÃO (?)</strong>
       </p>
       <div className={classes.users}>
       {
@@ -57,6 +70,44 @@ const Footer = (props: HeaderProps) => {
         })
       }
       </div>
+      <Dialog
+        open={open}
+        keepMounted
+        onClose={() => setOpen(false)}
+      >
+        <DialogTitle>Pontuação</DialogTitle>
+        <DialogContent className={classes.dialogContent}>
+          <p>
+            <strong>Sonhador: </strong>
+            Ganha 1 ponto para cada resposta correta + 2 pontos extra se recontar seu sonho por completo.
+          </p>
+          <p>
+            <strong>Fada: </strong>
+            Ganha 1 ponto para cada resposta correta do Sonhador.
+          </p>
+          <p>
+            <strong>Bicho-Papão: </strong>
+            Ganha 1 ponto para cada resposta errada do Sonhador.
+          </p>
+          <p>
+            <strong>Sandman: </strong>
+            Ganha mais pontos quando há equilíbrio na quantidade de respostas corretas e erradas do Sonhador. É tal que:
+          </p>
+          <ul>
+            <li>
+              Se o número de acertos for igual ao de erros, ganha 1 ponto por cada acerto + 2 pontos extra.
+            </li>
+            <li>
+              Se a diferença entre o número de acertos e de erros for igual a 1, ganha a maior pontuação, ou seja,
+              1 ponto para cada acerto (se tiver sido maioria) ou erro (se tiver sido maioria).
+            </li>
+            <li>
+              Se a diferença entre o número de acertos e de erros for maior do que 1, ganha a menor pontuação, ou seja,
+              ganha 1 ponto para cada acerto (se tiver sido minoria) ou erro (se tiver sido minoria).
+            </li>
+          </ul>
+        </DialogContent>
+      </Dialog>
     </footer>
   )
 }
