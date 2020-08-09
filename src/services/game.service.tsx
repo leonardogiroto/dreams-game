@@ -13,7 +13,7 @@ export const createRoom = async (roomName: string): Promise<string | null> => {
     roundStatus: RoundStatus.Idle,
     ownerUid: currentUser?.uid,
     usedWords: [],
-    users: [{ uid: currentUser?.uid, points: 0 }]
+    users: [{ uid: currentUser?.uid, email: currentUser?.email, points: 0 }]
   });
   return id;
 };
@@ -31,8 +31,9 @@ export const joinRoom = async (roomRef: firebase.database.Reference) => {
         usersRef.set([
           ...users, {
             points: 0,
-            uid: currentUser.uid
-          }
+            uid: currentUser.uid,
+            email: currentUser.email,
+          } as RoomUser,
         ]);
       }
     });

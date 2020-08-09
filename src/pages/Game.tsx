@@ -5,6 +5,7 @@ import { Location } from 'history';
 import { getRoomRef, setGameRoles, setRoundStarted, setRoundEnded, setNextWord, setDreamerScore } from '../services/game.service';
 import { Room } from '../interfaces/room.interface';
 import Header from '../components/header/Header';
+import Footer from '../components/footer/Footer';
 import RoleDescription from '../components/roleDescription/RoleDescription';
 import { GameRole } from '../interfaces/game-role.interface';
 import { RoundStatus } from '../interfaces/round-status.interface';
@@ -156,6 +157,7 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
           { roundStatus !== RoundStatus.Idle && (<RoleDescription currentRole={currentRole} />) }
         </Grid>
       </Grid>
+      <Footer roomId={roomId} />
     </>
   );
 }

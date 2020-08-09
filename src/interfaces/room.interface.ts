@@ -16,6 +16,7 @@ export interface Room {
 export interface RoomUser {
   points: number;
   uid: string;
+  email: string;
   roundRole?: GameRole;
 }
 
