@@ -92,7 +92,7 @@ export const setNextWord = async (roomId: string, guessedCorrectly: boolean) => 
     const newWord = getRandomWord(room.usedWords);
     await roomRef.child('/currentScore').set({
       'correct': (room.currentScore?.correct || 0) + (guessedCorrectly ? 1 : 0),
-      'wrong': (room.currentScore?.incorrect || 0) + (guessedCorrectly ? 0 : 1),
+      'incorrect': (room.currentScore?.incorrect || 0) + (guessedCorrectly ? 0 : 1),
     });
     await roomRef.child('/currentWord').set(newWord);
     await roomRef.child('/usedWords').set([
