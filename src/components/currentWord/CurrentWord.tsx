@@ -4,6 +4,7 @@ import { makeStyles, Card, CardContent, Typography, CardActions, Button } from '
 interface CurrentWordProps {
   word: string;
   setGuessedWord: Function;
+  isResponsibleForGuessedWord?: boolean;
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -16,7 +17,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const CurrentWord = (props: CurrentWordProps) => {
-  const { word, setGuessedWord } = props;
+  const { word, setGuessedWord, isResponsibleForGuessedWord = false } = props;
   const classes = useStyles();
 
   return (
@@ -29,10 +30,14 @@ const CurrentWord = (props: CurrentWordProps) => {
           {word}
         </Typography>
       </CardContent>
-      <CardActions className={classes.actionsContainer}>
-        <Button variant="contained" color="primary" onClick={() => setGuessedWord(true)}>Acertou</Button>
-        <Button variant="contained" color="secondary" onClick={() => setGuessedWord(false)}>Errou</Button>
-      </CardActions>
+      {
+        isResponsibleForGuessedWord && (
+          <CardActions className={classes.actionsContainer}>
+            <Button variant="contained" color="primary" onClick={() => setGuessedWord(true)}>Acertou</Button>
+            <Button variant="contained" color="secondary" onClick={() => setGuessedWord(false)}>Errou</Button>
+          </CardActions>
+        ) 
+      }
     </Card>
   );
 }

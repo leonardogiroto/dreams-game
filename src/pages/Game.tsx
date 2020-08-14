@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RouteComponentProps, StaticContext } from 'react-router';
-import { Accordion, Button, Grid, makeStyles, AccordionSummary, AccordionDetails } from '@material-ui/core';
+import { Button, Grid, makeStyles } from '@material-ui/core';
 import { Location } from 'history';
 import { getRoomRef, setGameRoles, setRoundStarted, setRoundEnded, setNextWord, setDreamerScore } from '../services/game.service';
 import { Room } from '../interfaces/room.interface';
@@ -13,6 +13,7 @@ import { getCurrentUser } from '../config';
 import CurrentWord from '../components/currentWord/CurrentWord';
 import firebase from 'firebase';
 import Timer from '../components/timer/Timer';
+import HowItWorks from '../components/howItWorks/HowItWorks';
 
 type LocationState = {
   from: Location;
@@ -30,16 +31,6 @@ const useStyles = makeStyles(() => ({
       marginRight: '8px',
     },
   },
-  accordionSummary: {
-    fontWeight: 500,
-  },
-  accordionDetails: {
-    flexDirection: 'column',
-    
-    '& p': {
-      marginTop: 0,
-    },
-  },
 }));
 
 const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
@@ -52,6 +43,8 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
   const [roundStatus, setRoundStatus] = useState<RoundStatus>(RoundStatus.Idle);
   const [currentRole, setCurrentRole] = useState<GameRole | undefined>(undefined);
   const [currentWord, setCurrentWord] = useState<string>('');
+  const [roundWords, setRoundWords] = useState<Array<string>>([]);
+  const [isResponsibleForGuessedWord, setIsResponsibleForGuessedWord] = useState<boolean>(false);
   const [triggerTimer, setTriggerTimer] = useState<boolean>(false);
 
   firebase.auth().onAuthStateChanged(authUser => {
@@ -72,12 +65,27 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
       if (!currentRole && room.users) {
         const user = room.users.find(u => u.uid === currentUser?.uid);
         setCurrentRole(user?.roundRole as GameRole);
+        
+        const lastSleeperUser = room.users[room.lastSleeperIndex];
+        setIsResponsibleForGuessedWord(user?.uid === lastSleeperUser.uid);
       }
 
       if (room.roundStatus === RoundStatus.Started) {
         setCurrentWord(room.currentWord);
       }
+      
+      if (room.roundStatus === RoundStatus.SettingRoles) {
+        setRoundWords([]);
+      }
+
+      if (room.roundStatus === RoundStatus.DreamReview) {
+        const roundWordsCount = room.currentScore.correct + room.currentScore.incorrect;
+        const wordsLength = room.usedWords.length - 1;
+        const words = room.usedWords.slice((wordsLength - roundWordsCount), wordsLength);
+        setRoundWords(words);
+      }
     }); 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, currentUser, roundStatus, currentRole]);
 
   const startGame = async () => {
@@ -135,6 +143,14 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
     return (
       <>
         {DreamReviewDescription}
+        <p>
+          Palavras da rodada:
+        </p>
+        <ul>{
+          roundWords.map((word, index) => (
+            <li key={index}>{word}</li>
+          ))
+        }</ul>
         <Button variant="contained" color="primary" onClick={() => startNewRound(true)} >
           Relembrou Sonho
         </Button>&nbsp;&nbsp;
@@ -153,31 +169,15 @@ const Game = (props: RouteComponentProps<{}, StaticContext, LocationState>) => {
           {/* Rodada em Andamento */}
           { roundStatus === RoundStatus.Started && currentRole !== GameRole.Sleeper && (
             <>
-              <CurrentWord word={currentWord} setGuessedWord={getNextWord} />
+              <CurrentWord
+                word={currentWord}
+                setGuessedWord={getNextWord}
+                isResponsibleForGuessedWord={isResponsibleForGuessedWord}
+              />
               <Timer triggerTimer={triggerTimer} />
-              <Accordion>
-                <AccordionSummary className={classes.accordionSummary} expandIcon={<span>+</span>} >
-                  Como Funciona?
-                </AccordionSummary>
-                <AccordionDetails className={classes.accordionDetails}>
-                  <p>
-                    Cada jogador, em ordem (conforme no rodapé do jogo), deve falar uma palavra qualquer para o Sonhador.
-                    <br />
-                    Essa palavra deve ajudá-lo ou atrapalhá-lo a adivinhar o que aparece na carta acima ("Palavra Atual").
-                    <br />
-                    Seu intuito com a palavra dita dependerá do papel que você está exercendo nessa rodada.
-                    <br />
-                    Os jogadores continuam falando palavras até que o Sonhador tente adivinhar.
-                  </p>
-                  <p>
-                    O objetivo do Sonhador é adivinhar as palavras que aparecem acima ("Palavra Atual").
-                    <br />
-                    Ele pode tentar adivinhar quantas palavras for possível antes que o tempo acabe.
-                    <br />
-                    Caso ele acerte, clique no botão "Acertou" e caso ele erre, no botão "Errou".
-                  </p>
-                </AccordionDetails>
-              </Accordion>
+              <HowItWorks
+                isResponsibleForGuessedWord={isResponsibleForGuessedWord}
+              />
             </>
           )}
           <div>
